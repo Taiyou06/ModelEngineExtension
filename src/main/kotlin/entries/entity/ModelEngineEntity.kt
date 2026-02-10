@@ -13,9 +13,9 @@ import com.typewritermc.engine.paper.entry.entity.PositionProperty
 import com.typewritermc.engine.paper.entry.entity.SkinProperty
 import com.typewritermc.engine.paper.entry.entries.EntityProperty
 import com.typewritermc.engine.paper.entry.entries.Var
+import com.typewritermc.engine.paper.plugin
 import com.typewritermc.engine.paper.utils.toBukkitLocation
 import com.typewritermc.entity.entries.data.minecraft.GlowingEffectProperty
-import com.typewritermc.entity.entries.data.minecraft.SpeedData
 import com.typewritermc.entity.entries.data.minecraft.SpeedProperty
 import com.typewritermc.entity.entries.data.minecraft.living.EquipmentProperty
 import com.typewritermc.entity.entries.data.minecraft.living.ScaleProperty
@@ -125,28 +125,31 @@ class ModelEngineEntity(
 
     override fun spawn(location: PositionProperty) {
         if (modelId.isEmpty() || ModelEngineAPI.getBlueprint(modelId) == null) return
-        entity.pollLocation(location.toBukkitLocation())
 
-        modeledEntity = ModelEngineAPI.createModeledEntity(entity).apply {
-            isModelRotationLocked = false
-        }
-        activeModel = ModelEngineAPI.createActiveModel(modelId)
-        modeledEntity.addModel(activeModel, true)
-        entity.setForceViewing(player, true)
+        bukkitRun {
+            entity.pollLocation(location.toBukkitLocation())
 
-        // This only exists in the newer developer builds, so there's a little fallback
-        val callbackField = entity.data::class.members
-            .find { it.name == "syncUpdateCallback" }
-
-        if (callbackField != null) {
-            subscribeId = entity.data.syncUpdateCallback.subscribe {
-                this.location.poll()?.let {
-                    if (defaultAnimationSettings.walkAnimation) entity.isWalking =
-                        isMoving(previousLocation.get(), it)
-                    entity.pollLocation(it)
-                }
+            modeledEntity = ModelEngineAPI.createModeledEntity(entity).apply {
+                isModelRotationLocked = false
             }
-        } else tickInThread = true
+            activeModel = ModelEngineAPI.createActiveModel(modelId)
+            modeledEntity.addModel(activeModel, true)
+            entity.setForceViewing(player, true)
+
+            // This only exists in the newer developer builds, so there's a little fallback
+            val callbackField = entity.data::class.members
+                .find { it.name == "syncUpdateCallback" }
+
+            if (callbackField != null) {
+                subscribeId = entity.data.syncUpdateCallback.subscribe {
+                    this.location.poll()?.let {
+                        if (defaultAnimationSettings.walkAnimation) entity.isWalking =
+                            isMoving(previousLocation.get(), it)
+                        entity.pollLocation(it)
+                    }
+                }
+            } else tickInThread = true
+        }
 
         super.spawn(location)
     }
@@ -174,6 +177,10 @@ class ModelEngineEntity(
         return this.entityId == entityId
     }
 
+    fun bukkitRun(runnable: Runnable) {
+        Bukkit.getScheduler().runTask(plugin, runnable)
+    }
+
     fun height(): Double {
         val blueprint = ModelEngineAPI.getBlueprint(modelId) ?: return 0.0
         val scale = property(ScaleProperty::class)?.scale ?: 1.0
@@ -182,7 +189,7 @@ class ModelEngineEntity(
     }
 
     fun speed(): Float {
-        return property(SpeedProperty::class)?.speed ?: 0.2085f;
+        return property(SpeedProperty::class)?.speed ?: 0.2085f
     }
 
     fun isMoving(prev: Location, current: Location, threshold: Double = 0.01): Boolean {
