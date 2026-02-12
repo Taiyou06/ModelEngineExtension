@@ -60,6 +60,10 @@ class ModelEngineEntity(
     private var tickInThread: Boolean = false
 
     override fun applyProperties(properties: List<EntityProperty>) {
+        if (!::activeModel.isInitialized || !::modeledEntity.isInitialized) {
+            return
+        }
+
         properties.forEach { property ->
             when (property) {
                 is PositionProperty -> {
@@ -149,6 +153,8 @@ class ModelEngineEntity(
                     }
                 }
             } else tickInThread = true
+
+            applyProperties(properties.values.toList())
         }
 
         super.spawn(location)
