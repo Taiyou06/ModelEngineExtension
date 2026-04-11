@@ -23,6 +23,8 @@ import com.typewritermc.entity.entries.data.minecraft.living.DamagedProperty
 import com.typewritermc.entity.entries.data.minecraft.living.EquipmentProperty
 import com.typewritermc.entity.entries.data.minecraft.living.UseItemProperty
 import com.typewritermc.entity.entries.data.minecraft.toProperty
+import entries.action.playAnimationWithPriority
+import entries.action.stopAnimationWithPriority
 import entries.cinematic.segments.ModelEngineEntityRecordedSegment
 import entries.entity.ModelEngineEntity
 import entries.entity.NamedModelEngineEntity
@@ -158,19 +160,9 @@ class ModelEngineEntityCinematicAction(
                     return
                 }
 
-                if (animationSettings.force) {
-                    animationHandler.forceStopAnimation(animation)
-                    return
-                }
-
-                animationHandler.stopAnimation(animation)
+                animationHandler.stopAnimationWithPriority(animation, animationSettings.priority, animationSettings.force)
             } else {
-                animationHandler.playAnimation(
-                    animation,
-                    animationSettings.lerpIn.toMillis() / 1000.0,
-                    animationSettings.lerpOut.toMillis() / 1000.0,
-                    animationSettings.speed, animationSettings.force
-                )
+                animationHandler.playAnimationWithPriority(animation, animationSettings)
             }
         }
 
