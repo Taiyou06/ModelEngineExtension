@@ -152,17 +152,19 @@ class ModelEngineEntityCinematicAction(
             val animation = it.animation.get(player)
             val animationSettings = it.animationSettings
             val stop = it.stop.get(player)
-            val animationHandler = entity()?.activeModel?.animationHandler ?: return
+            val modelEntity = entity() ?: return@forEach
 
-            if (stop) {
-                if (animation.isEmpty()) {
-                    animationHandler.forceStopAllAnimations()
-                    return
+            modelEntity.whenModelReady { model ->
+                val animationHandler = model.animationHandler
+                if (stop) {
+                    if (animation.isEmpty()) {
+                        animationHandler.forceStopAllAnimations()
+                    } else {
+                        animationHandler.stopAnimationWithPriority(animation, animationSettings.priority, animationSettings.force)
+                    }
+                } else {
+                    animationHandler.playAnimationWithPriority(animation, animationSettings)
                 }
-
-                animationHandler.stopAnimationWithPriority(animation, animationSettings.priority, animationSettings.force)
-            } else {
-                animationHandler.playAnimationWithPriority(animation, animationSettings)
             }
         }
 
