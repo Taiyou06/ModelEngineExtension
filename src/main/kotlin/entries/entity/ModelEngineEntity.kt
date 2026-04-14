@@ -218,6 +218,9 @@ class ModelEngineEntity(
     }
 
     fun isMoving(prev: Location, current: Location, threshold: Double = 0.01): Boolean {
+        // Crossing worlds (e.g. cinematic_world → world during a stage swap)
+        // counts as movement and would otherwise throw from Location.distance.
+        if (prev.world != current.world) return true
         return prev.distance(current) > threshold
     }
 
